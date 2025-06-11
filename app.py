@@ -2,7 +2,8 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
-# スマホ画面対応（幅100%に調整）
+
+# スマホ幅に対応するCSS
 st.markdown("""
     <style>
     .main .block-container {
@@ -29,7 +30,7 @@ timeframe = st.selectbox("時間足を選択", [
     "1時間足", "4時間足", "日足", "週足", "月足"
 ])
 
-# 時間足に応じてパラメータ
+# yfinance用 period / interval 対応表
 interval_map = {
     "1時間足": ("30d", "1h"),
     "4時間足": ("7d", "1h"),  # 再構成
@@ -56,14 +57,30 @@ if ticker_code and timeframe:
         if df.empty:
             st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
         else:
-            # 移動平均を計算
+            # 移動平均計算
             df["13MA"] = df["Close"].rolling(window=13).mean()
             df["26MA"] = df["Close"].rolling(window=26).mean()
 
-            # チャート描画
+            # ▼▼▼ トレンド判定 ▼▼▼
+            ma13 = df["13MA"].dropna()
+            ma26 = df["26MA"].dropna()
+            if len(ma13) >= 3 and len(ma26) >= 3:
+                slope_13 = ma13.iloc[-1] - ma13.iloc[-3]
+                slope_26 = ma26.iloc[-1] - ma26.iloc[-3]
+                if ma13.iloc[-1] > ma26.iloc[-1] and slope_13 > 0 and slope_26 > 0:
+                    trend = "🔵 上昇トレンド"
+                elif ma13.iloc[-1] < ma26.iloc[-1] and slope_13 < 0 and slope_26 < 0:
+                    trend = "🔴 下降トレンド"
+                else:
+                    trend = "⚪ 横ばい・レンジ"
+            else:
+                trend = "（トレンド判定不可）"
+
+            st.markdown(f"### 📊 トレンド判定結果：**{trend}**")
+
+            # ▼▼▼ チャート描画 ▼▼▼
             fig = go.Figure()
 
-            # ローソク足
             fig.add_trace(go.Candlestick(
                 x=df.index,
                 open=df['Open'],
@@ -75,7 +92,6 @@ if ticker_code and timeframe:
                 name="ローソク足"
             ))
 
-            # 13日移動平均（黄）
             fig.add_trace(go.Scatter(
                 x=df.index,
                 y=df["13MA"],
@@ -84,7 +100,6 @@ if ticker_code and timeframe:
                 name="13MA"
             ))
 
-            # 26日移動平均（白）
             fig.add_trace(go.Scatter(
                 x=df.index,
                 y=df["26MA"],
@@ -99,8 +114,11 @@ if ticker_code and timeframe:
                 yaxis_title="価格",
                 plot_bgcolor="black",
                 paper_bgcolor="black",
-                font_color="white"
+                font_color="white",
+                xaxis_rangeslider_visible=True,
+                height=600  # ✅ チャート高さ指定（スマホでも見やすく）
             )
+
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
