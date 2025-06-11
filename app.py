@@ -111,7 +111,7 @@ if ticker_code and timeframe:
             fig.update_layout(
                 title=f"{ticker_code} のチャート（{timeframe}）",
                 xaxis_title="日付",
-                yaxis_title="価格",
+                yaxis_title="",
                 plot_bgcolor="black",
                 paper_bgcolor="black",
                 font_color="white",
