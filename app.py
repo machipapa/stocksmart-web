@@ -41,23 +41,26 @@ if ticker_code and timeframe:
         if df.empty:
             st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
         else:
-            # チャート描画
-fig = go.Figure(
-    data=[
-        go.Candlestick(
-            x=df.index,
-            open=df['Open'],
-            high=df['High'],
-            low=df['Low'],
-            close=df['Close'],
-            increasing_line_color='blue',  # 上昇：青
-            decreasing_line_color='red'    # 下降：赤
-        )
-    ]
-)
+            # チャート描画（青＝上昇、赤＝下降）
+            fig = go.Figure(
+                data=[
+                    go.Candlestick(
+                        x=df.index,
+                        open=df['Open'],
+                        high=df['High'],
+                        low=df['Low'],
+                        close=df['Close'],
+                        increasing_line_color='blue',  # 上昇：青
+                        decreasing_line_color='red'    # 下降：赤
+                    )
+                ]
+            )
 
-            )])
-            fig.update_layout(title=f"{ticker_code} のチャート（{timeframe}）", xaxis_title="日付", yaxis_title="価格")
+            fig.update_layout(
+                title=f"{ticker_code} のチャート（{timeframe}）",
+                xaxis_title="日付",
+                yaxis_title="価格"
+            )
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
