@@ -1,63 +1,58 @@
 import streamlit as st
-import pandas as pd
 import yfinance as yf
+import pandas as pd
+import plotly.graph_objects as go
 
-st.title("📊 StockSmart PRO - 複数銘柄スクリーニング")
+st.title("📈 株価チャートビューワー")
 
-# CSVファイル読み込み
-try:
-    stocks_df = pd.read_csv("stocks_list_sample.csv")
-except FileNotFoundError:
-    st.error("❌ stocks_list_sample.csv が見つかりません。アップロードしてください。")
-    st.stop()
+# 銘柄コード入力（例：7203.T）
+ticker_code = st.text_input("銘柄コードを入力（例：7203.T）", value="7203.T")
 
-# 検索入力欄
-search_term = st.text_input("🔍 銘柄名またはコードで検索", "").strip()
+# 時間足選択
+timeframe = st.selectbox("時間足を選択", [
+    "1時間足", "4時間足", "日足", "週足", "月足"
+])
 
-# スコア付けロジック
-results = []
+# 時間足に応じて yfinance パラメータをセット
+interval_map = {
+    "1時間足": ("30d", "1h"),
+    "4時間足": ("7d", "1h"),  # 4hは1hから再構成
+    "日足":    ("6mo", "1d"),
+    "週足":    ("1y", "1wk"),
+    "月足":    ("5y", "1mo"),
+}
 
-for i, row in stocks_df.iterrows():
-    code = row["銘柄コード"]
-    name = row["銘柄名"]
-
+if ticker_code and timeframe:
+    period, interval = interval_map[timeframe]
     try:
-        ticker = yf.Ticker(code)
-        info = ticker.info
+        ticker = yf.Ticker(ticker_code)
+        df = ticker.history(period=period, interval=interval)
 
-        per = info.get("trailingPE", None)
-        volume = info.get("volume", 0)
-        average_volume = info.get("averageVolume", 1)
+        if timeframe == "4時間足":
+            # 4時間足を1時間足から再構成
+            df = df.resample("4H").agg({
+                "Open": "first",
+                "High": "max",
+                "Low": "min",
+                "Close": "last",
+                "Volume": "sum"
+            }).dropna()
 
-        score = 0
-        if per and 5 <= per <= 15:
-            score += 1
-        if average_volume and volume > average_volume * 1.5:
-            score += 1
-        # 3点目以降はデモのため仮にランダムや仮設定で省略可能
-
-        results.append({
-            "銘柄コード": code,
-            "銘柄名": name,
-            "PER": per,
-            "出来高": volume,
-            "スコア": score
-        })
+        if df.empty:
+            st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
+        else:
+            # チャート描画
+            fig = go.Figure(data=[go.Candlestick(
+                x=df.index,
+                open=df['Open'],
+                high=df['High'],
+                low=df['Low'],
+                close=df['Close'],
+                increasing_line_color='green',
+                decreasing_line_color='red'
+            )])
+            fig.update_layout(title=f"{ticker_code} のチャート（{timeframe}）", xaxis_title="日付", yaxis_title="価格")
+            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.warning(f"{name}（{code}）：データ取得に失敗しました")
-
-# 結果をDataFrame化
-results_df = pd.DataFrame(results)
-results_df = results_df.sort_values(by="スコア", ascending=False)
-
-# フィルター適用
-if search_term:
-    results_df = results_df[results_df["銘柄名"].str.contains(search_term, case=False, na=False) |
-                            results_df["銘柄コード"].str.contains(search_term)]
-
-# 表示
-if not results_df.empty:
-    st.dataframe(results_df)
-else:
-    st.warning("条件に一致する銘柄がありませんでした。")
+        st.error(f"エラーが発生しました：{e}")
