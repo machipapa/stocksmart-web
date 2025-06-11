@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 st.title("📈 株価チャートビューワー")
 
-# 銘柄コード入力（例：7203.T）
+# 銘柄コード入力
 ticker_code = st.text_input("銘柄コードを入力（例：7203.T）", value="7203.T")
 
 # 時間足選択
@@ -13,10 +13,10 @@ timeframe = st.selectbox("時間足を選択", [
     "1時間足", "4時間足", "日足", "週足", "月足"
 ])
 
-# 時間足に応じて yfinance パラメータをセット
+# 時間足に応じてパラメータ
 interval_map = {
     "1時間足": ("30d", "1h"),
-    "4時間足": ("7d", "1h"),  # 4hは1hから再構成
+    "4時間足": ("7d", "1h"),  # 再構成
     "日足":    ("6mo", "1d"),
     "週足":    ("1y", "1wk"),
     "月足":    ("5y", "1mo"),
@@ -29,7 +29,6 @@ if ticker_code and timeframe:
         df = ticker.history(period=period, interval=interval)
 
         if timeframe == "4時間足":
-            # 4時間足を1時間足から再構成
             df = df.resample("4H").agg({
                 "Open": "first",
                 "High": "max",
@@ -41,15 +40,11 @@ if ticker_code and timeframe:
         if df.empty:
             st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
         else:
-            # チャート描画（青＝上昇、赤＝下降）
-                    if df.empty:
-            st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
-        else:
-            # 13MAと26MAを計算（Close列に対して）
+            # 移動平均を計算
             df["13MA"] = df["Close"].rolling(window=13).mean()
             df["26MA"] = df["Close"].rolling(window=26).mean()
 
-            # チャート描画（ローソク足 + 移動平均線）
+            # チャート描画
             fig = go.Figure()
 
             # ローソク足
@@ -64,7 +59,7 @@ if ticker_code and timeframe:
                 name="ローソク足"
             ))
 
-            # 13日移動平均（黄色）
+            # 13日移動平均（黄）
             fig.add_trace(go.Scatter(
                 x=df.index,
                 y=df["13MA"],
@@ -86,12 +81,11 @@ if ticker_code and timeframe:
                 title=f"{ticker_code} のチャート（{timeframe}）",
                 xaxis_title="日付",
                 yaxis_title="価格",
-                plot_bgcolor="black",  # 背景が黒のときに白線が見やすい
+                plot_bgcolor="black",
                 paper_bgcolor="black",
                 font_color="white"
             )
             st.plotly_chart(fig, use_container_width=True)
-
 
     except Exception as e:
         st.error(f"エラーが発生しました：{e}")
