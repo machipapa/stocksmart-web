@@ -42,7 +42,7 @@ if ticker_code and timeframe:
             st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
         else:
             # チャート描画
-  fig = go.Figure(
+fig = go.Figure(
     data=[
         go.Candlestick(
             x=df.index,
