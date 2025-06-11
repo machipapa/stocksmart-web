@@ -42,26 +42,56 @@ if ticker_code and timeframe:
             st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
         else:
             # チャート描画（青＝上昇、赤＝下降）
-            fig = go.Figure(
-                data=[
-                    go.Candlestick(
-                        x=df.index,
-                        open=df['Open'],
-                        high=df['High'],
-                        low=df['Low'],
-                        close=df['Close'],
-                        increasing_line_color='blue',  # 上昇：青
-                        decreasing_line_color='red'    # 下降：赤
-                    )
-                ]
-            )
+                    if df.empty:
+            st.warning("データが取得できませんでした。銘柄コードや期間をご確認ください。")
+        else:
+            # 13MAと26MAを計算（Close列に対して）
+            df["13MA"] = df["Close"].rolling(window=13).mean()
+            df["26MA"] = df["Close"].rolling(window=26).mean()
+
+            # チャート描画（ローソク足 + 移動平均線）
+            fig = go.Figure()
+
+            # ローソク足
+            fig.add_trace(go.Candlestick(
+                x=df.index,
+                open=df['Open'],
+                high=df['High'],
+                low=df['Low'],
+                close=df['Close'],
+                increasing_line_color='blue',
+                decreasing_line_color='red',
+                name="ローソク足"
+            ))
+
+            # 13日移動平均（黄色）
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=df["13MA"],
+                mode="lines",
+                line=dict(color="yellow", width=1.5),
+                name="13MA"
+            ))
+
+            # 26日移動平均（白）
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=df["26MA"],
+                mode="lines",
+                line=dict(color="white", width=1.5),
+                name="26MA"
+            ))
 
             fig.update_layout(
                 title=f"{ticker_code} のチャート（{timeframe}）",
                 xaxis_title="日付",
-                yaxis_title="価格"
+                yaxis_title="価格",
+                plot_bgcolor="black",  # 背景が黒のときに白線が見やすい
+                paper_bgcolor="black",
+                font_color="white"
             )
             st.plotly_chart(fig, use_container_width=True)
+
 
     except Exception as e:
         st.error(f"エラーが発生しました：{e}")
