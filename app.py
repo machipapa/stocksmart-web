@@ -116,7 +116,8 @@ if ticker_code and timeframe:
                 paper_bgcolor="black",
                 font_color="white",
                 xaxis_rangeslider_visible=True,
-                height=600,  # スマホでも大きく見える高さ
+                height=600,
+                yaxis=dict(showticklabels=False),  # 👈 価格ラベルを非表示にする
                 legend=dict(
                     orientation="h",
                     yanchor="bottom",
