@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 
-# スマホ幅に対応するCSS
+# スマホ幅対応CSS
 st.markdown("""
     <style>
     .main .block-container {
@@ -33,7 +33,7 @@ timeframe = st.selectbox("時間足を選択", [
 # yfinance用 period / interval 対応表
 interval_map = {
     "1時間足": ("30d", "1h"),
-    "4時間足": ("7d", "1h"),  # 再構成
+    "4時間足": ("7d", "1h"),
     "日足":    ("6mo", "1d"),
     "週足":    ("1y", "1wk"),
     "月足":    ("5y", "1mo"),
@@ -116,7 +116,15 @@ if ticker_code and timeframe:
                 paper_bgcolor="black",
                 font_color="white",
                 xaxis_rangeslider_visible=True,
-                height=600  # ✅ チャート高さ指定（スマホでも見やすく）
+                height=600,  # スマホでも大きく見える高さ
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=12)
+                )
             )
 
             st.plotly_chart(fig, use_container_width=True)
