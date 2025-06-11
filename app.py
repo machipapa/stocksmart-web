@@ -111,13 +111,15 @@ if ticker_code and timeframe:
             fig.update_layout(
                 title=f"{ticker_code} のチャート（{timeframe}）",
                 xaxis_title="日付",
-                yaxis_title="",
+                yaxis_title="",  # 👈 「価格」ラベルだけ非表示
                 plot_bgcolor="black",
                 paper_bgcolor="black",
                 font_color="white",
                 xaxis_rangeslider_visible=True,
                 height=600,
-                yaxis=dict(showticklabels=False),  # 👈 価格ラベルを非表示にする
+                xaxis=dict(
+                    domain=[0, 0.85]  # 👈 チャート右端15%の余白をカット
+                ),
                 legend=dict(
                     orientation="h",
                     yanchor="bottom",
