@@ -55,6 +55,7 @@ fig = go.Figure(
         )
     ]
 )
+
             )])
             fig.update_layout(title=f"{ticker_code} のチャート（{timeframe}）", xaxis_title="日付", yaxis_title="価格")
             st.plotly_chart(fig, use_container_width=True)
